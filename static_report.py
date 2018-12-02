@@ -17,8 +17,10 @@ static_report_dict['FILE_SIZE'] = retrieve_input_file_size()
 # Opcode and Asm
 static_report_dict['opcode'] = []
 static_report_dict['asm'] = []
-
+static_report_dict['segments'] = []
 for seg_ea in Segments() :
+    seg_name, seg_start, seg_end = idc.SegName(seg_ea), idc.SegStart(seg_ea), idc.SegEnd(seg_ea)
+    static_report_dict['segments'].append([seg_name, seg_start, seg_end])
     for func_ea in Functions(seg_ea, SegEnd(seg_ea)):
         f = get_func(func_ea)
         flags = GetFunctionFlags(func_ea)
