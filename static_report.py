@@ -14,8 +14,8 @@ static_report_dict['SHA256'] = retrieve_input_file_sha256()
 static_report_dict['CRC32'] = retrieve_input_file_crc32()
 static_report_dict['FILE_SIZE'] = retrieve_input_file_size()
 
-# Opcode and Asm
-static_report_dict['opcode'] = []
+# bytes and Asm
+static_report_dict['bytes'] = []
 static_report_dict['asm'] = []
 static_report_dict['segments'] = []
 for seg_ea in Segments() :
@@ -23,23 +23,22 @@ for seg_ea in Segments() :
     static_report_dict['segments'].append([seg_name, seg_start, seg_end])
     for func_ea in Functions(seg_ea, SegEnd(seg_ea)):
         f = get_func(func_ea)
-        flags = GetFunctionFlags(func_ea)
+        #flags = GetFunctionFlags(func_ea)
         #if flags & FUNC_LIB or flags & FUNC_THUNK :
         #    continue
-        func_opcode = []
+        func_bytes = []
         func_asm = []
         for block in FlowChart(f):
-            block_opcode = []
+            block_bytes = []
             block_asm = []
             for head in Heads(block.startEA, block.endEA):
                 text = generate_disasm_line(head, 0)
-                if text :
+                if text and isCode(GetFlags(head)) :
                     block_asm.append(tag_remove(text))
-                if isCode(GetFlags(head)) :
-                    block_opcode.append('%02x' %(Byte(head)))
-            func_opcode.append(block_opcode)
+                    block_bytes.append(' '.join([ '%02x' %ord(each) for each in GetManyBytes(head, idc.NextHead(head)-head) ]))
+            func_bytes.append(block_bytes)
             func_asm.append(block_asm)
-        static_report_dict['opcode'].append(func_opcode)
+        static_report_dict['bytes'].append(func_bytes)
         static_report_dict['asm'].append(func_asm)
 
 # String
@@ -72,6 +71,6 @@ for i in range(get_import_module_qty()):
 static_report_dict['export'] = [ each[-1] for each in list(Entries()) ]
 
 with open(static_report_dict['MD5'] + '.json', 'w') as f :
-    json.dump(static_report_dict, f)
+    json.dump(static_report_dict, f, indent=4)
 
 Exit(0)
